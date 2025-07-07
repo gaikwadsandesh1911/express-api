@@ -87,7 +87,7 @@ const getAllMovies = async (req, res, next) => {
     const totalMoviesCount = await apiFeatures.query.clone().countDocuments();
 
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 2;
+    const limit = parseInt(req.query.limit, 10) || 10;
 
     const totalPages = Math.ceil(totalMoviesCount / limit);
 

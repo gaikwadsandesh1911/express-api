@@ -11,7 +11,7 @@ const movieSchema = new mongoose.Schema(
       unique: true,
       trim: true, // extra white-space is removed before and after string
       // select: false   // this property will not be shown
-      minlength: [3, "movie name must be atleast 3 character"],
+      minlength: [2, "movie name must be atleast 2 character"],
       maxlenght: [100, "movie name must not have more than 100 characters"],
 
       // validator libray
@@ -92,10 +92,7 @@ const movieSchema = new mongoose.Schema(
       type: String,
     },
   },
-  /* {
-    toJSON: { virtuals: true }, // This makes the `virtual` fields available when we convert a document to JSON.
-    toObject: { virtuals: true },
-  }, */
+  
   { timestamps: true }
 );
 
@@ -110,11 +107,11 @@ movieSchema.set('toObject', { virtuals: true } );
 
 // ------------------------------------------------------------------------------------------------------------
 
-movieSchema.pre("save", function (next) {
+/* movieSchema.pre("save", function (next) {
   // console.log('pre', this)        // this means document being process.
   this.createdBy = "Sandesh Gaikwad"; // createdBy must be present on mongoose modalSchema
   next();
-});
+}); */
 
 /* movieSchema.post("save", function (doc, next) {
   // post hook callback function dosen't have access to this keyowrd, isntead it has doc means currently saved document

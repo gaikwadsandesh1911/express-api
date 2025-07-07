@@ -5,11 +5,11 @@ import express from "express";
 const router = express.Router();
 
 router.get("/movies/all", protect, getAllMovies);
-router.get("/movies/stats", getMovieStats);
-router.get("/genre/:genre", getMovieByGenre);
-router.post("/create", protect, createMovie);
-router.get("/:id", getMovieById);
-router.patch("/:id", updateMovieById);
+router.get("/movies/stats", protect, restrict('admin'), getMovieStats);
+router.get("/genre/:genre", protect, restrict('admin'), getMovieByGenre);
+router.post("/create", protect, restrict('admin'), createMovie);
+router.get("/:id", protect, getMovieById);
+router.patch("/:id", protect,  updateMovieById);
 router.delete("/:id", protect, restrict('admin', 'superAdmin'), deleteMovieById);
 
 export default router;

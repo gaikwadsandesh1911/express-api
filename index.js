@@ -6,8 +6,6 @@ import { globalErrorHandlingFunction } from './utils/globalErrorHandling.js';
 import qs from 'qs'
 import { appLimiter } from './middleware/rateLimiter.js';
 import helmet from 'helmet';
-import mongoSanitize from 'express-mongo-sanitize'
-import xss from 'xss-clean';
 import hpp from 'hpp';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -49,15 +47,6 @@ app.use(express.json({
   limit: '10kb'  // req.body can accept max 10kb data. rest of data will be truncate.
 }));
 
-// sanitize data
-
-/* sanitize NoSql injection
- It removes $ and . from keys in req.body, req.query, and req.params to prevent query injection */
-app.use(mongoSanitize());
-
-/* It cleans user input from malicious HTML and JavaScript to prevent XSS.
-*/
-app.use(xss());
 
 /* hpp helps to prevent filtering duplicate query parameters.
   /api/products?filter=shoes&filter=electronics => not allow filter use twice
@@ -66,6 +55,7 @@ app.use(hpp({
   whitelist: ['sort', 'actors']
   //  sort, actors allow multiple time => /api/products?actors=salman&actors=aish
 }));
+
 
 app.use("/api/movie", movieRoutes);
 app.use("/api/auth", authRoutes);
@@ -93,8 +83,10 @@ const startServer = async () => {
     console.error("💥 Server not started due to DB connection failure.");
     process.exit(1);
   }
+
 };
 startServer();
+
 
 /*  unhandledRejection is an event in Node.js that occurs when a Promise is rejected
     but no .catch() handler or try-catch block is attached to handle that rejection.
