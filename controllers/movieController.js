@@ -1,7 +1,11 @@
 import { Movie } from "../models/movieSchema.js";
 import { ApiFeatures } from "../utils/ApiFeatures.js";
 import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
+import fs from 'fs';
 import { CustomError } from "../utils/CustomError.js";
+
+import { cloudinary } from "../utils/cloudinary.js";
+
 
 /* const getAllMovies = async (req, res, next) => {
   try {
@@ -38,7 +42,7 @@ import { CustomError } from "../utils/CustomError.js";
     }
 
     const page = +req.query.page || 1;
-    const limit = +req.query.limit || 2;
+    const limit = +req.query.limit || 10;
     const skip = (page - 1) * limit;
 
     const totalMoviesCount = await Movie.countDocuments();
@@ -71,13 +75,14 @@ import { CustomError } from "../utils/CustomError.js";
 // --------------------------------------------------------------------------------------------------------------------
 
 const getAllMovies = async (req, res, next) => {
-  console.log("req.user",req.user);
+  // console.log("req.user",req.user);
   try {
     
     const baseQuery = Movie.find(); // return mongoose query object
 
     // creating instance of class.
     const apiFeatures = new ApiFeatures(baseQuery, req.query)
+      .search()
       .filter()
       .sort()
       .limitFields();
@@ -116,7 +121,14 @@ const getAllMovies = async (req, res, next) => {
     // Fetch paginated data
     const allMovies = await apiFeatures.query;
 
-    res.status(200).json({
+    if (allMovies.length === 0) {
+        return res.status(404).json({
+          status: "fail",
+          message: "No movies found.",
+        });
+    }
+
+    return res.status(200).json({
       status: "success",
       currentPage: page,
       totalPages: totalPages,
@@ -221,8 +233,37 @@ const getMovieByGenre = async (req, res, next) => {
 
 // --------------------------------------------------------------------------------------------------------------------
 
-const createMovie = asyncErrorHandler(async (req, res) => {
+const createMovie = asyncErrorHandler(async (req, res, next) => {
+
+  // console.log({createMovie: req.files});
+
+  const uploadPromises = req.files.map(async(file) => {
+
+    //  if we choose not an image file.
+    if(!file.mimetype.startsWith('image/')){
+      fs.unlinkSync(file.path);
+      return next(new CustomError(`Invalid file type: ${file.originalname}`, 400));
+    }
+
+    // upload image to cloudinary
+    const response =  await cloudinary.uploader.upload(file.path, {
+      folder: "express-api-images"    // name of the folder on cloudinary service
+    });
+
+    // remove file from servers local path
+    fs.unlinkSync(file.path);
+    // return cloudinary response
+    return response.secure_url
+  });
+
+  // if one image fails all images will be fail....
+  const imageUrls = await Promise.all(uploadPromises);
+  // console.log('imageUrls', imageUrls);
+
   const movie = await Movie.create(req.body);
+
+  movie.coverImage = imageUrls;
+
   return res.status(201).json({
     status: "success",
     data: {

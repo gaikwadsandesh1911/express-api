@@ -7,17 +7,24 @@ class ApiFeatures {
 
   filter() {
     const queryObj = { ...this.queryStr };
+    // Create a shallow copy of the query string object to safely modify it.
 
-    const excludedFields = ["sort", "fields", "page", "limit"];
+    const excludedFields = ["sort", "fields", "page", "limit", "search"];
+    // these fields are used for pagination, sorting, etc.
+    //  So we exclude them from queryObj to avoid passing them into the .find() method.
+    // they will handle separetely
 
     excludedFields.forEach((field) => delete queryObj[field]);
+    // in url we write ?ratings[gte]=8&releaseYear[lt]=2020
 
     let queryString = JSON.stringify(queryObj);
 
     queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    // adds $ prefix (MongoDB syntax).
 
     const mongoQuery = JSON.parse(queryString);
-
+    // Parse back to object and use it with Mongoose's .find() method.
+    
     this.query = this.query.find(mongoQuery);
 
     return this; // return current object so we can chain another method
@@ -25,7 +32,10 @@ class ApiFeatures {
 
   sort() {
     if (this.queryStr.sort) {
+      // in url for sorting => /api/movies?sort=ratings,releaseYear
       const sortBy = this.queryStr.sort.split(",").join(" ");
+      // "ratings,releaseYear".split(",")  => ["ratings", "releaseYear"]
+      // ["ratings", "releaseYear"].join(" ") => "ratings releaseYear"  => mongodb compatible
       this.query = this.query.sort(sortBy);
     } else {
       this.query = this.query.sort("-createdAt"); // default sort if needed
@@ -35,6 +45,8 @@ class ApiFeatures {
 
   limitFields() {
     if (this.queryStr.fields) {
+      // /api/v1/movies?fields=title,ratings,releaseYear
+      // only mentioned fields will be sent in url [ .select() ]
       const fields = this.queryStr.fields.split(",").join(" ");
       this.query = this.query.select(fields);
     } else {
@@ -55,5 +67,16 @@ class ApiFeatures {
         parseInt("010", 10) // explicitly base 10 => 10  Because parseInt() can behave unexpectedly if you don’t specify the base:
    */
   }
+
+  search() {
+    // ?search=dark knight
+    if (this.queryStr.search) {
+      this.query = this.query.find({
+        $text: { $search: this.queryStr.search }
+      });
+    }
+    return this;
+  }
+
 }
 export { ApiFeatures };

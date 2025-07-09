@@ -107,11 +107,11 @@ movieSchema.set('toObject', { virtuals: true } );
 
 // ------------------------------------------------------------------------------------------------------------
 
-/* movieSchema.pre("save", function (next) {
+movieSchema.pre("save", function (next) {
   // console.log('pre', this)        // this means document being process.
-  this.createdBy = "Sandesh Gaikwad"; // createdBy must be present on mongoose modalSchema
+  this.createdBy = this.name; // createdBy must be present on mongoose modalSchema
   next();
-}); */
+});
 
 /* movieSchema.post("save", function (doc, next) {
   // post hook callback function dosen't have access to this keyowrd, isntead it has doc means currently saved document
@@ -141,6 +141,16 @@ movieSchema.pre("aggregate", function (next) {
 });
 
 // this.pipeline() return an array.. unshift() means at first position we want to add new stage
+
+// ------------------------------------------------------------------------------------------------------------
+// create a compound text index.
+movieSchema.index({name: "text"});
+/* 
+    1. creates a MongoDB text index on the name field
+    2. It enables full-text search on that specific field using the $text operator.
+    3. it performs case-insensitive, word-based searches
+*/
+// movieSchema.index({name: "text", description: "text"});
 
 // ------------------------------------------------------------------------------------------------------------
 
